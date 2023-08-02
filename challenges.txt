@@ -1,0 +1,269 @@
+Act as an expert javascript developer where you have to write a code where it takes input from user json and company json files.
+Each file contains json data related to company and users. Your task is to write the code in javascript which performs below listed tasks:
+Code challenge
+
+  You have a user json format for users mentioned below.
+  You have a company json format for companies mentioned below.
+
+  Please look at these individual json format.
+  Create code in JavaScript that process these json formats and creates an
+  output.txt file.
+
+  Criteria for the output file.
+  Any user that belongs to a company in the companies json format and is active needs to get a token top up of the specified amount in the companies json format top up field.
+
+  If the users company email status is true indicate in the output that the user was sent an email ( don't actually send any emails). However, if the user has an email status of false, don't send the email regardless of the company's email status.
+
+  Use the required output format for how the output json should be structured. Also make sure that final required json format data is reordered as follows: Companies should be ordered by company id and Users should be ordered alphabetically by last name.
+
+  Important points
+  - There could be bad data
+  - The code should be runnable in a command line
+  - Code should be written in JavaScript
+  - Code file should be named challenge.js
+
+  Assessment Criteria
+  - Functionality
+  - Error Handling
+  - Reusability
+  - Style
+  - Adherence to convention
+  - Documentation
+  - Communication
+
+sample json data formats
+user json format =>
+[
+	{
+		"id": 1,
+		"first_name": "Tanya",
+		"last_name": "Nichols",
+		"email": "tanya.nichols@test.com",
+		"company_id": 2,
+		"email_status": true,
+		"active_status": false,
+		"tokens": 23
+	},
+	{
+		"id": 2,
+		"first_name": "Brent",
+		"last_name": "Rodriquez",
+		"email": "brent.rodriquez@test.com",
+		"company_id": 4,
+		"email_status": false,
+		"active_status": true,
+		"tokens": 96
+	},
+	,,,,,,,
+]
+
+company json format =>
+[
+	{
+		"id": 1,
+		"name": "Blue Cat Inc.",
+		"top_up": 71,
+		"email_status": false
+	},
+	{
+		"id": 2,
+		"name": "Yellow Mouse Inc.",
+		"top_up": 37,
+		"email_status": true
+	},
+	,,,,,,
+]
+
+required output format =>
+
+	Company Id: 1
+	Company Name: Blue Cat Inc.
+	Users Emailed:
+	Users Not Emailed:
+		Carr, Genesis, genesis.carr@demo.com
+		  Previous Token Balance, 71
+		  New Token Balance 142
+		Lynch, Eileen, eileen.lynch@fake.com
+		  Previous Token Balance, 40
+		  New Token Balance 111
+		Total amount of top ups for Blue Cat Inc.: 142
+
+	Company Id: 2
+	Company Name: Yellow Mouse Inc.
+	Users Emailed:
+		Boberson, Bob, bob.boberson@test.com
+		  Previous Token Balance, 23
+		  New Token Balance 60
+		Boberson, John, john.boberson@test.com
+		  Previous Token Balance, 15
+		  New Token Balance 52
+		Simpson, Edgar, edgar.simpson@notreal.com
+		  Previous Token Balance, 67
+		  New Token Balance 104
+	Users Not Emailed:
+		Gordon, Sara, sara.gordon@test.com
+		  Previous Token Balance, 22
+		  New Token Balance 59
+		Weaver, Sebastian, sebastian.weaver@fake.com
+		  Previous Token Balance, 66
+		  New Token Balance 103
+		Total amount of top ups for Yellow Mouse Inc.: 185
+
+	Company Id: 3
+	Company Name: Red Horse Inc.
+	Users Emailed:
+		George, Mary, mary.george@test.com
+		  Previous Token Balance, 37
+		  New Token Balance 92
+		Jimerson, Jim, jim.jimerson@test.com
+		  Previous Token Balance, 10
+		  New Token Balance 65
+		Nederson, Ned, ned.nederson@test.com
+		  Previous Token Balance, 3
+		  New Token Balance 58
+	Users Not Emailed:
+		Castro, Monica, monica.castro@notreal.com
+		  Previous Token Balance, 69
+		  New Token Balance 124
+		Dean, Claire, claire.dean@test.com
+		  Previous Token Balance, 98
+		  New Token Balance 153
+		Silva, Elsie, elsie.silva@fake.com
+		  Previous Token Balance, 49
+		  New Token Balance 104
+		Total amount of top ups for Red Horse Inc.: 330
+=======================================================================
+======================================================
+======================================
+======================
+Final code =>challange.js
+
+```javascript
+const fs = require('fs');
+
+// Function to load JSON data from a file and parse it into JavaScript objects
+function loadJSONFile(filePath) {
+  const rawData = fs.readFileSync(filePath);
+  return JSON.parse(rawData);
+}
+
+// Function to save the output data to a file
+function saveOutputToFile(outputData) {
+  fs.writeFileSync('output.txt', outputData);
+}
+
+// Function to check the email status of a user's company
+function getUserEmailStatus(user, companies) {
+  const company = companies.find((c) => c.id === user.company_id);
+  return company ? company.email_status : false;
+}
+
+// Function to process a single user and apply top-up if applicable
+function processUser(user, companies) {
+  const company = companies.find((c) => c.id === user.company_id);
+  if (!company || !user.active_status) {
+    // User does not belong to any company or is not active, no top-up is applied
+    return '';
+  }
+
+  const topUpAmount = company.top_up;
+  const previousBalance = user.tokens;
+  const newBalance = previousBalance + topUpAmount;
+
+  const emailStatus = getUserEmailStatus(user, companies);
+  const emailStatusText = emailStatus ? 'Emailed' : 'Not Emailed';
+
+  // Generate formatted text for the user's top-up details
+  return `
+    ${user.last_name}, ${user.first_name}, ${user.email}
+      Previous Token Balance: ${previousBalance}
+      New Token Balance: ${newBalance}
+  `;
+}
+
+// Function to process all users belonging to a company and calculate the top-ups
+function processCompany(company, users) {
+  const companyId = company.id;
+  const companyName = company.name;
+  const usersEmailed = [];
+  const usersNotEmailed = [];
+
+  // Loop through all users to process those belonging to the current company
+  users.forEach((user) => {
+    if (user.company_id === companyId) {
+      const userProcessed = processUser(user, companies);
+      if (userProcessed) {
+        const emailStatus = getUserEmailStatus(user, companies);
+        if (emailStatus) {
+          usersEmailed.push(userProcessed);
+        } else {
+          usersNotEmailed.push(userProcessed);
+        }
+      }
+    }
+  });
+
+  // Calculate the total top-ups for this company
+  const totalTopUps = usersEmailed.reduce((total, user) => {
+    const tokens = parseInt(user.match(/New Token Balance: (\d+)/)[1], 10);
+    return total + tokens;
+  }, 0);
+
+  // Generate formatted text for the company's top-ups and user details
+  const output = `
+    Company Id: ${companyId}
+    Company Name: ${companyName}
+    Users Emailed:${usersEmailed.join('')}
+    Users Not Emailed:${usersNotEmailed.join('')}
+    Total amount of top ups for ${companyName}: ${totalTopUps}
+  `;
+
+  return output;
+}
+
+// Function to sort companies by their IDs
+function sortCompaniesById(companies) {
+  return companies.slice().sort((a, b) => a.id - b.id);
+}
+
+// Function to sort users by their last names
+function sortUsersByLastName(users) {
+  return users.slice().sort((a, b) => a.last_name.localeCompare(b.last_name));
+}
+
+// Main function to execute the code
+function main() {
+  try {
+    // Load data from the JSON files
+    const users = loadJSONFile('user.json');
+    const companies = loadJSONFile('company.json');
+
+    // Sort companies and users to prepare for processing
+    const sortedCompanies = sortCompaniesById(companies);
+    const sortedUsers = sortUsersByLastName(users);
+
+    let outputData = '';
+
+    // Process each company and its associated users
+    sortedCompanies.forEach((company) => {
+      const companyOutput = processCompany(company, sortedUsers);
+      outputData += companyOutput;
+    });
+
+    // Save the output data to the output.txt file
+    saveOutputToFile(outputData);
+    console.log('Output file (output.txt) has been generated successfully.');
+  } catch (error) {
+    console.error('An error occurred:', error);
+  }
+}
+
+// Run the main function to start the processing
+main();
+```
+
+These detailed comments should provide a clear understanding of each function's purpose and the overall flow of the code.
+
+
+
+
